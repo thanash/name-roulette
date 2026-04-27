@@ -369,6 +369,25 @@
       border-bottom: 1px solid var(--border);
       color: var(--text-muted);
       flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    #btn-clear-history {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    #btn-clear-history:hover {
+      background: var(--danger-light);
+      color: var(--danger);
+      border-color: var(--danger);
     }
     #history-list {
       flex: 1;
@@ -797,7 +816,10 @@
         </div>
       </div>
       <div id="history-panel">
-        <div id="history-panel-header">指名履歴</div>
+        <div id="history-panel-header">
+          <span>指名履歴</span>
+          <button id="btn-clear-history">クリア</button>
+        </div>
         <div id="history-list">
           <div id="history-empty">まだ指名されていません</div>
         </div>
@@ -1536,6 +1558,14 @@ document.getElementById('btn-reload-data').addEventListener('click', async () =>
   await fetchClassGroups();
   renderSettingsStats();
   showToast('学生データを再読み込みしました', 'success');
+});
+
+document.getElementById('btn-clear-history').addEventListener('click', () => {
+  if (state.history.length === 0) return;
+  state.history = [];
+  saveHistory();
+  renderHistory();
+  showToast('履歴をクリアしました', 'success');
 });
 
 document.getElementById('btn-login').addEventListener('click', doLogin);
