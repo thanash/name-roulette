@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ランダム指名</title>
+  <style>
+    /* ========== CSS 変数 ========== */
+    :root {
+      --primary:        #2563eb;
+      --primary-hover:  #1d4ed8;
+      --primary-light:  #dbeafe;
+      --danger:         #dc2626;
+      --danger-light:   #fee2e2;
+      --success:        #16a34a;
+      --success-light:  #dcfce7;
+      --warning:        #d97706;
+      --warning-light:  #fef3c7;
+      --bg:             #f1f5f9;
+      --surface:        #ffffff;
+      --border:         #e2e8f0;
+      --text:           #1e293b;
+      --text-muted:     #64748b;
+      --text-light:     #94a3b8;
+      --shadow-sm:      0 1px 3px rgba(0,0,0,.08);
+      --shadow-md:      0 4px 12px rgba(0,0,0,.1);
+      --shadow-lg:      0 8px 24px rgba(0,0,0,.14);
+      --radius-sm:      6px;
+      --radius-md:      10px;
+      --radius-lg:      16px;
+    }
+
+    /* ========== リセット ========== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+    }
+    button { cursor: pointer; font-family: inherit; border: none; }
+    input  { font-family: inherit; }
+
+    /* ========== ヘッダー ========== */
+    #header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+      z-index: 10;
+    }
+    #header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: .02em;
+    }
+    /* 氏名 / 学籍番号 トグル */
+    #display-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg);
+      border-radius: 20px;
+      padding: 4px;
+      border: 1px solid var(--border);
+    }
+    .toggle-btn {
+      padding: 4px 14px;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 500;
+      background: transparent;
+      color: var(--text-muted);
+      transition: all .2s;
+    }
+    .toggle-btn.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ========== メインレイアウト ========== */
+    #layout {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ========== サイドバー ========== */
+    #sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #sidebar-header {
+      padding: 14px 16px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #group-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+    .group-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background .15s;
+      position: relative;
+    }
+    .group-item:hover { background: var(--bg); }
+    .group-item.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .group-item-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+    .group-badge {
+      font-size: 11px;
+      background: var(--border);
+      color: var(--text-muted);
+      border-radius: 10px;
+      padding: 1px 7px;
+      flex-shrink: 0;
+      margin-left: 6px;
+    }
+    .group-item.active .group-badge {
+      background: var(--primary);
+      color: #fff;
+    }
+    .group-delete-btn {
+      display: none;
+      background: var(--danger-light);
+      color: var(--danger);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 11px;
+      margin-left: 4px;
+      flex-shrink: 0;
+    }
+    .group-item:hover .group-delete-btn { display: block; }
+    #btn-create-group {
+      margin: 8px;
+      padding: 9px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      width: calc(100% - 16px);
+      transition: background .15s;
+      flex-shrink: 0;
+    }
+    #btn-create-group:hover { background: var(--primary-hover); }
+    #no-group-msg {
+      padding: 16px;
+      font-size: 12px;
+      color: var(--text-light);
+      text-align: center;
+    }
+
+    /* ========== コンテンツエリア ========== */
+    #content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* タブバー */
+    #tab-bar {
+      display: flex;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      flex-shrink: 0;
+    }
+    .tab-btn {
+      padding: 14px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: transparent;
+      border-bottom: 2px solid transparent;
+      transition: color .15s, border-color .15s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    /* タブパネル */
+    .tab-panel { display: none; flex: 1; overflow: hidden; }
+    .tab-panel.active { display: flex; }
+
+    /* ========== 指名タブ ========== */
+    #tab-nominate {
+      gap: 16px;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    /* 左カラム */
+    #nominate-left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    /* 指名カード */
+    #nominate-card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: 40px 32px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    #nominate-card .class-badge {
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: 12px;
+      padding: 3px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    #nominate-main-text {
+      font-size: 64px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.1;
+      letter-spacing: -.02em;
+      word-break: break-all;
+    }
+    #nominate-sub-text {
+      font-size: 18px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+    .empty-state {
+      color: var(--text-light);
+      font-size: 16px;
+      padding: 20px 0;
+    }
+
+    /* アニメーション */
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in { animation: fadeSlideUp .35s ease forwards; }
+
+    /* プログレスバー */
+    #progress-wrap {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+    #progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    #progress-bar-bg {
+      height: 10px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    #progress-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width .4s ease, background .4s;
+      width: 0%;
+      background: var(--primary);
+    }
+
+    /* ボタン */
+    #btn-area {
+      display: flex;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    #btn-nominate {
+      flex: 1;
+      padding: 16px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: var(--radius-md);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      transition: background .15s, transform .1s;
+      box-shadow: var(--shadow-md);
+    }
+    #btn-nominate:hover  { background: var(--primary-hover); }
+    #btn-nominate:active { transform: scale(.98); }
+    #btn-nominate:disabled {
+      background: var(--border);
+      color: var(--text-light);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    #btn-reset {
+      padding: 16px 20px;
+      background: transparent;
+      color: var(--danger);
+      border: 2px solid var(--danger);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      transition: background .15s;
+    }
+    #btn-reset:hover { background: var(--danger-light); }
+
+    /* 右カラム: 履歴パネル */
+    #history-panel {
+      width: 260px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #history-panel-header {
+      padding: 14px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    #history-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      gap: 8px;
+    }
+    .history-item:nth-child(odd) { background: var(--bg); }
+    .history-name {
+      font-size: 13px;
+      font-weight: 600;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .history-group {
+      font-size: 11px;
+      color: var(--text-light);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 80px;
+    }
+    .history-time {
+      font-size: 11px;
+      color: var(--text-light);
+      flex-shrink: 0;
+    }
+    #history-empty {
+      padding: 20px;
+      text-align: center;
+      color: var(--text-light);
+      font-size: 13px;
+    }
+
+    /* ========== 学生管理タブ ========== */
+    #tab-students {
+      flex-direction: column;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    #tab-students .panel-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .student-table-wrap {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+    .student-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .student-table th {
+      background: var(--bg);
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+    }
+    .student-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .student-table tr:last-child td { border-bottom: none; }
+    .student-table tr:hover td { background: var(--bg); }
+    .badge {
+      display: inline-block;
+      border-radius: 10px;
+      padding: 2px 9px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-picked  { background: var(--success-light); color: var(--success); }
+    .badge-excluded{ background: var(--warning-light); color: var(--warning); }
+    .badge-active  { background: var(--primary-light);  color: var(--primary); }
+    .btn-sm {
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      transition: background .15s;
+    }
+    .btn-exclude {
+      background: var(--warning-light);
+      color: var(--warning);
+    }
+    .btn-include {
+      background: var(--success-light);
+      color: var(--success);
+    }
+    #students-empty {
+      padding: 40px;
+      text-align: center;
+      color: var(--text-light);
+    }
+
+    /* ========== 設定タブ ========== */
+    #tab-settings {
+      flex-direction: column;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .settings-section {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      padding: 20px;
+      margin-bottom: 16px;
+      max-width: 560px;
+    }
+    .settings-section h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: var(--text-muted);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .form-group { margin-bottom: 14px; }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .form-input:focus { border-color: var(--primary); }
+    .radio-group { display: flex; gap: 16px; }
+    .radio-label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+    .btn-primary {
+      padding: 9px 18px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      transition: background .15s;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary {
+      padding: 9px 18px;
+      background: var(--bg);
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      transition: background .15s;
+    }
+    .btn-secondary:hover { background: var(--border); }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .stat-item {
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+    }
+    .stat-label { font-size: 11px; color: var(--text-muted); }
+    .stat-value { font-size: 20px; font-weight: 700; color: var(--primary); }
+
+    /* ========== モーダル ========== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 28px;
+      width: 480px;
+      max-width: calc(100vw - 32px);
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+    .modal-body { flex: 1; overflow-y: auto; }
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+      flex-shrink: 0;
+    }
+    .class-checkbox-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .class-checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 2px solid var(--border);
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .class-checkbox-item:hover { border-color: var(--primary-light); }
+    .class-checkbox-item.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+    .class-checkbox-item input[type=checkbox] { accent-color: var(--primary); }
+    .class-checkbox-label { font-size: 14px; font-weight: 500; cursor: pointer; }
+
+    /* ========== トースト通知 ========== */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      background: var(--text);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      box-shadow: var(--shadow-lg);
+      animation: fadeSlideUp .25s ease;
+      pointer-events: auto;
+    }
+    .toast.success { background: var(--success); }
+    .toast.error   { background: var(--danger); }
+    .toast.warning { background: var(--warning); }
+
+    /* ========== スクロールバー ========== */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+  </style>
+</head>
+<body>
+
+<!-- ========== ヘッダー ========== -->
+<header id="header">
+  <h1>ランダム指名</h1>
+  <div id="display-toggle">
+    <button class="toggle-btn active" data-mode="name">氏名</button>
+    <button class="toggle-btn" data-mode="number">学籍番号</button>
+  </div>
+</header>
+
+<!-- ========== メインレイアウト ========== -->
+<div id="layout">
+  <!-- サイドバー -->
+  <aside id="sidebar">
+    <div id="sidebar-header">グループ</div>
+    <div id="group-list">
+      <div id="no-group-msg">グループがありません</div>
+    </div>
+    <button id="btn-create-group">＋ グループを作成</button>
+  </aside>
+
+  <!-- コンテンツ -->
+  <div id="content">
+    <!-- タブバー -->
+    <div id="tab-bar">
+      <button class="tab-btn active" data-tab="nominate">指名</button>
+      <button class="tab-btn" data-tab="students">学生管理</button>
+      <button class="tab-btn" data-tab="settings">設定</button>
+    </div>
+
+    <!-- 指名タブ -->
+    <div id="tab-nominate" class="tab-panel active">
+      <!-- 左カラム -->
+      <div id="nominate-left">
+        <!-- ボタン -->
+        <div id="btn-area">
+          <button id="btn-nominate" disabled>指名する</button>
+          <button id="btn-reset">リセット</button>
+        </div>
+        <!-- 指名カード -->
+        <div id="nominate-card">
+          <div id="card-inner">
+            <p class="empty-state">グループを選択してください</p>
+          </div>
+        </div>
+        <!-- プログレス -->
+        <div id="progress-wrap">
+          <div id="progress-label">
+            <span id="progress-text">—</span>
+            <span id="progress-pct">—</span>
+          </div>
+          <div id="progress-bar-bg">
+            <div id="progress-bar-fill"></div>
+          </div>
+        </div>
+      </div>
+      <!-- 右カラム: 履歴 -->
+      <div id="history-panel">
+        <div id="history-panel-header">指名履歴</div>
+        <div id="history-list">
+          <div id="history-empty">まだ指名されていません</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 学生管理タブ -->
+    <div id="tab-students" class="tab-panel">
+      <p class="panel-title">学生管理</p>
+      <div id="students-content">
+        <div id="students-empty" class="student-table-wrap">
+          <p>グループを選択してください</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 設定タブ -->
+    <div id="tab-settings" class="tab-panel">
+      <div class="settings-section">
+        <h3>API設定</h3>
+        <div class="form-group">
+          <label class="form-label" for="input-api-base">APIベースURL</label>
+          <input class="form-input" id="input-api-base" type="text" value="/name-roulette/api">
+        </div>
+        <div class="form-group">
+          <label class="form-label">デフォルト表示モード</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="display-mode" value="name" checked> 氏名
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="display-mode" value="number"> 学籍番号
+            </label>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn-primary" id="btn-save-settings">保存</button>
+          <button class="btn-secondary" id="btn-reload-data">学生データ再読み込み</button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>キャッシュ情報</h3>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-label">グループ数</div>
+            <div class="stat-value" id="stat-groups">0</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">学生キャッシュ数</div>
+            <div class="stat-value" id="stat-students">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== グループ作成モーダル ========== -->
+<div class="modal-overlay" id="modal-create-group">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <p class="modal-title" id="modal-title">グループを作成</p>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label" for="input-group-name">グループ名</label>
+        <input class="form-input" id="input-group-name" type="text" placeholder="例: 1年Aクラス+Bクラス">
+      </div>
+      <label class="form-label">対象クラス（1つ以上選択）</label>
+      <div id="class-checkbox-list" class="class-checkbox-list">
+        <p style="color:var(--text-light);font-size:13px;">読み込み中...</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="btn-modal-cancel">キャンセル</button>
+      <button class="btn-primary"   id="btn-modal-save">作成</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== トースト ========== -->
+<div id="toast-container"></div>
+
+<script>
+// ========== ユーティリティ ==========
+
+/**
+ * XSS 対策: 文字列をHTMLエスケープ
+ * @param {string} str
+ * @returns {string}
+ */
+function escapeHtml(str) {
+  const el = document.createElement('div');
+  el.textContent = String(str ?? '');
+  return el.innerHTML;
+}
+
+/**
+ * トースト通知を表示（右下、3秒で消える）
+ * @param {string} msg
+ * @param {'success'|'error'|'warning'|''} type
+ */
+function showToast(msg, type = '') {
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+/**
+ * 現在時刻を HH:MM 形式で返す
+ * @returns {string}
+ */
+function nowHHMM() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
+// ========== localStorage ヘルパー ==========
+
+const LS_KEYS = {
+  groups:   'sg_groups',
+  picked:   'sg_picked',
+  excluded: 'sg_excluded',
+  history:  'sg_history',
+  settings: 'sg_settings',
+};
+
+function lsGet(key, fallback) {
+  try {
+    const v = localStorage.getItem(key);
+    return v !== null ? JSON.parse(v) : fallback;
+  } catch { return fallback; }
+}
+function lsSet(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
+
+// ========== アプリ状態 ==========
+
+const state = {
+  /** @type {Array<{id:string, name:string, classGroups:string[]}>} */
+  groups: lsGet(LS_KEYS.groups, []),
+  /** @type {{[groupId:string]: string[]}} */
+  picked: lsGet(LS_KEYS.picked, {}),
+  /** @type {{[groupId:string]: string[]}} */
+  excluded: lsGet(LS_KEYS.excluded, {}),
+  /** @type {Array<{id:string,name:string,number:string,group:string,time:string}>} */
+  history: lsGet(LS_KEYS.history, []),
+  /** @type {{apiBase:string, displayMode:'name'|'number'}} */
+  settings: lsGet(LS_KEYS.settings, { apiBase: '/name-roulette/api', displayMode: 'name' }),
+  /** 選択中グループID @type {string|null} */
+  activeGroupId: null,
+  /** APIから取得したクラスグループ一覧 @type {string[]} */
+  classGroups: [],
+  /** class_group -> 学生[] のキャッシュ @type {{[cg:string]: Array}} */
+  studentCache: {},
+  /** 現在の表示モード @type {'name'|'number'} */
+  displayMode: 'name',
+  /** 最後に指名した学生 @type {object|null} */
+  lastPicked: null,
+};
+
+// 設定から表示モードを初期化
+state.displayMode = state.settings.displayMode || 'name';
+
+// ========== 永続化 ==========
+
+function saveGroups()   { lsSet(LS_KEYS.groups,   state.groups); }
+function savePicked()   { lsSet(LS_KEYS.picked,   state.picked); }
+function saveExcluded() { lsSet(LS_KEYS.excluded, state.excluded); }
+function saveHistory()  { lsSet(LS_KEYS.history,  state.history); }
+function saveSettings() { lsSet(LS_KEYS.settings, state.settings); }
+
+// ========== API ==========
+
+/**
+ * クラスグループ一覧を API から取得
+ */
+async function fetchClassGroups() {
+  try {
+    const res = await fetch(state.settings.apiBase + '/class-groups');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    state.classGroups = await res.json();
+  } catch (e) {
+    console.error('クラスグループ取得エラー:', e);
+    showToast('クラスグループの取得に失敗しました', 'error');
+  }
+}
+
+/**
+ * 指定 class_group の学生を API から取得（キャッシュあり）
+ * @param {string} classGroup
+ * @returns {Promise<Array>}
+ */
+async function fetchStudents(classGroup) {
+  if (state.studentCache[classGroup]) {
+    return state.studentCache[classGroup];
+  }
+  try {
+    const url = state.settings.apiBase + '/students?class_group=' + encodeURIComponent(classGroup);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    state.studentCache[classGroup] = data;
+    return data;
+  } catch (e) {
+    console.error('学生データ取得エラー:', e);
+    showToast('学生データの取得に失敗しました', 'error');
+    return [];
+  }
+}
+
+/**
+ * アクティブグループの全学生を取得（複数クラス結合）
+ * @returns {Promise<Array>}
+ */
+async function getActiveGroupStudents() {
+  const group = state.groups.find(g => g.id === state.activeGroupId);
+  if (!group) return [];
+  const lists = await Promise.all(group.classGroups.map(cg => fetchStudents(cg)));
+  // 重複排除 (id 基準)
+  const map = new Map();
+  lists.flat().forEach(s => map.set(s.id, s));
+  return [...map.values()].sort((a, b) => (a.student_number || '').localeCompare(b.student_number || ''));
+}
+
+// ========== ランダム指名ロジック ==========
+
+/**
+ * 指名を実行する
+ */
+async function doNominate() {
+  const groupId = state.activeGroupId;
+  if (!groupId) return;
+
+  const students = await getActiveGroupStudents();
+  const picked   = state.picked[groupId]   || [];
+  const excluded = state.excluded[groupId] || [];
+
+  // 候補: 除外・指名済み以外
+  let candidates = students.filter(s => !picked.includes(s.id) && !excluded.includes(s.id));
+
+  // 全員消化 → 自動リセット
+  if (candidates.length === 0) {
+    state.picked[groupId] = [];
+    savePicked();
+    candidates = students.filter(s => !excluded.includes(s.id));
+    showToast('全員を指名しました。自動リセットしました！', 'success');
+    if (candidates.length === 0) {
+      showToast('対象学生がいません', 'warning');
+      return;
+    }
+  }
+
+  // ランダム選択
+  const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+
+  // 指名済みに追加
+  if (!state.picked[groupId]) state.picked[groupId] = [];
+  state.picked[groupId].push(chosen.id);
+  savePicked();
+
+  // 履歴に追加 (最大50件)
+  const group = state.groups.find(g => g.id === groupId);
+  const histItem = {
+    id:     chosen.id,
+    name:   chosen.name,
+    number: chosen.student_number,
+    group:  group ? group.name : '',
+    time:   nowHHMM(),
+  };
+  state.history.unshift(histItem);
+  if (state.history.length > 50) state.history.pop();
+  saveHistory();
+
+  state.lastPicked = chosen;
+  renderNominateCard(chosen);
+  renderProgress();
+  renderHistory();
+  renderGroupList();
+}
+
+// ========== 描画 ==========
+
+/**
+ * 指名カードを描画
+ * @param {object|null} student
+ */
+function renderNominateCard(student) {
+  const inner = document.getElementById('card-inner');
+  if (!student) {
+    // DOM操作は textContent で安全に
+    inner.innerHTML = '';
+    const p = document.createElement('p');
+    p.className = 'empty-state';
+    p.textContent = state.activeGroupId ? '指名するボタンを押してください' : 'グループを選択してください';
+    inner.appendChild(p);
+    return;
+  }
+
+  const group = state.groups.find(g => g.id === state.activeGroupId);
+
+  // アニメーション用に一旦クリア
+  inner.innerHTML = '';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'animate-in';
+
+  if (group) {
+    const badge = document.createElement('div');
+    badge.className = 'class-badge';
+    badge.textContent = group.name;
+    wrap.appendChild(badge);
+  }
+
+  const mainText = document.createElement('div');
+  mainText.id = 'nominate-main-text';
+  mainText.textContent = state.displayMode === 'name' ? student.name : student.student_number;
+  wrap.appendChild(mainText);
+
+  const subText = document.createElement('div');
+  subText.id = 'nominate-sub-text';
+  subText.textContent = state.displayMode === 'name' ? student.student_number : student.name;
+  wrap.appendChild(subText);
+
+  inner.appendChild(wrap);
+}
+
+/**
+ * 表示モードを切り替えた際にカードを再描画
+ */
+function updateCardDisplayMode() {
+  if (state.lastPicked) {
+    const mainEl = document.getElementById('nominate-main-text');
+    const subEl  = document.getElementById('nominate-sub-text');
+    if (mainEl && subEl) {
+      mainEl.textContent = state.displayMode === 'name' ? state.lastPicked.name : state.lastPicked.student_number;
+      subEl.textContent  = state.displayMode === 'name' ? state.lastPicked.student_number : state.lastPicked.name;
+    }
+  }
+}
+
+/**
+ * プログレスバーを描画
+ */
+async function renderProgress() {
+  const groupId = state.activeGroupId;
+  const labelEl = document.getElementById('progress-text');
+  const pctEl   = document.getElementById('progress-pct');
+  const fill    = document.getElementById('progress-bar-fill');
+
+  if (!groupId) {
+    labelEl.textContent = '—';
+    pctEl.textContent   = '—';
+    fill.style.width    = '0%';
+    fill.style.background = 'var(--primary)';
+    return;
+  }
+
+  const students = await getActiveGroupStudents();
+  const total    = students.length;
+  const picked   = (state.picked[groupId] || []).length;
+  const pct      = total > 0 ? Math.round(picked / total * 100) : 0;
+
+  labelEl.textContent = `指名済み: ${picked} / ${total}`;
+  pctEl.textContent   = `${pct}%`;
+  fill.style.width    = pct + '%';
+
+  // 進捗率で色変化: 青→黄→緑
+  if (pct >= 100) {
+    fill.style.background = 'var(--success)';
+  } else if (pct >= 50) {
+    fill.style.background = 'var(--warning)';
+  } else {
+    fill.style.background = 'var(--primary)';
+  }
+}
+
+/**
+ * 指名ボタンの有効/無効を更新
+ */
+function updateNominateButton() {
+  const btn = document.getElementById('btn-nominate');
+  btn.disabled = !state.activeGroupId;
+}
+
+/**
+ * グループ一覧をサイドバーに描画
+ */
+function renderGroupList() {
+  const list = document.getElementById('group-list');
+  const noMsg = document.getElementById('no-group-msg');
+
+  // 既存のグループアイテムを削除（no-group-msg は残す）
+  [...list.querySelectorAll('.group-item')].forEach(el => el.remove());
+
+  if (state.groups.length === 0) {
+    noMsg.style.display = '';
+    return;
+  }
+  noMsg.style.display = 'none';
+
+  state.groups.forEach(group => {
+    const item = document.createElement('div');
+    item.className = 'group-item' + (group.id === state.activeGroupId ? ' active' : '');
+    item.dataset.id = group.id;
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'group-item-name';
+    nameEl.textContent = group.name;
+
+    const pickedCount = (state.picked[group.id] || []).length;
+    const badge = document.createElement('span');
+    badge.className = 'group-badge';
+    badge.textContent = pickedCount;
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'group-delete-btn';
+    delBtn.textContent = '削除';
+    delBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (confirm(`グループ「${group.name}」を削除しますか？`)) {
+        deleteGroup(group.id);
+      }
+    });
+
+    item.appendChild(nameEl);
+    item.appendChild(badge);
+    item.appendChild(delBtn);
+
+    item.addEventListener('click', () => selectGroup(group.id));
+    list.appendChild(item);
+  });
+}
+
+/**
+ * 指名履歴パネルを描画
+ */
+function renderHistory() {
+  const list  = document.getElementById('history-list');
+  const empty = document.getElementById('history-empty');
+  const groupId = state.activeGroupId;
+
+  // 現在のグループの履歴を最新20件表示
+  const filtered = groupId
+    ? state.history.filter(h => {
+        const g = state.groups.find(g2 => g2.id === groupId);
+        return g && h.group === g.name;
+      }).slice(0, 20)
+    : state.history.slice(0, 20);
+
+  // 既存アイテムを削除
+  [...list.querySelectorAll('.history-item')].forEach(el => el.remove());
+
+  if (filtered.length === 0) {
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  filtered.forEach(h => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'history-name';
+    nameEl.textContent = state.displayMode === 'name' ? h.name : h.number;
+
+    const groupEl = document.createElement('span');
+    groupEl.className = 'history-group';
+    groupEl.textContent = h.group;
+
+    const timeEl = document.createElement('span');
+    timeEl.className = 'history-time';
+    timeEl.textContent = h.time;
+
+    item.appendChild(nameEl);
+    item.appendChild(groupEl);
+    item.appendChild(timeEl);
+    list.appendChild(item);
+  });
+}
+
+/**
+ * 学生管理タブを描画
+ */
+async function renderStudentsTab() {
+  const container = document.getElementById('students-content');
+  container.innerHTML = '';
+
+  const groupId = state.activeGroupId;
+  if (!groupId) {
+    const empty = document.createElement('div');
+    empty.id = 'students-empty';
+    empty.className = 'student-table-wrap';
+    empty.innerHTML = '<p>グループを選択してください</p>';
+    container.appendChild(empty);
+    return;
+  }
+
+  const students = await getActiveGroupStudents();
+  if (students.length === 0) {
+    const empty = document.createElement('div');
+    empty.id = 'students-empty';
+    empty.className = 'student-table-wrap';
+    empty.innerHTML = '<p>学生データがありません</p>';
+    container.appendChild(empty);
+    return;
+  }
+
+  const picked   = state.picked[groupId]   || [];
+  const excluded = state.excluded[groupId] || [];
+
+  const wrap = document.createElement('div');
+  wrap.className = 'student-table-wrap';
+
+  // テーブル生成（innerHTML は escapeHtml 済みデータのみ使用）
+  const table = document.createElement('table');
+  table.className = 'student-table';
+
+  const thead = document.createElement('thead');
+  thead.innerHTML = `<tr>
+    <th>学籍番号</th>
+    <th>氏名</th>
+    <th>クラス</th>
+    <th>状態</th>
+    <th>操作</th>
+  </tr>`;
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  students.forEach(s => {
+    const isPicked   = picked.includes(s.id);
+    const isExcluded = excluded.includes(s.id);
+
+    const tr = document.createElement('tr');
+
+    // 各セルは textContent で安全挿入
+    const tdNum = document.createElement('td');
+    tdNum.textContent = s.student_number;
+
+    const tdName = document.createElement('td');
+    tdName.textContent = s.name;
+
+    const tdClass = document.createElement('td');
+    tdClass.textContent = s.class_group;
+
+    const tdStatus = document.createElement('td');
+    if (isExcluded) {
+      tdStatus.innerHTML = `<span class="badge badge-excluded">除外中</span>`;
+    } else if (isPicked) {
+      tdStatus.innerHTML = `<span class="badge badge-picked">指名済み</span>`;
+    } else {
+      tdStatus.innerHTML = `<span class="badge badge-active">対象</span>`;
+    }
+
+    const tdAction = document.createElement('td');
+    const actionBtn = document.createElement('button');
+    if (isExcluded) {
+      actionBtn.className = 'btn-sm btn-include';
+      actionBtn.textContent = '解除';
+      actionBtn.addEventListener('click', () => { includeStudent(groupId, s.id); renderStudentsTab(); });
+    } else {
+      actionBtn.className = 'btn-sm btn-exclude';
+      actionBtn.textContent = '除外';
+      actionBtn.addEventListener('click', () => { excludeStudent(groupId, s.id); renderStudentsTab(); });
+    }
+    tdAction.appendChild(actionBtn);
+
+    tr.appendChild(tdNum);
+    tr.appendChild(tdName);
+    tr.appendChild(tdClass);
+    tr.appendChild(tdStatus);
+    tr.appendChild(tdAction);
+    tbody.appendChild(tr);
+  });
+
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  container.appendChild(wrap);
+}
+
+/**
+ * 設定タブの統計情報を更新
+ */
+function renderSettingsStats() {
+  document.getElementById('stat-groups').textContent   = state.groups.length;
+  document.getElementById('stat-students').textContent = Object.values(state.studentCache).flat().length;
+}
+
+// ========== グループ操作 ==========
+
+/**
+ * グループを選択
+ * @param {string} groupId
+ */
+function selectGroup(groupId) {
+  state.activeGroupId = groupId;
+  state.lastPicked = null;
+  renderGroupList();
+  renderNominateCard(null);
+  renderProgress();
+  renderHistory();
+  updateNominateButton();
+  renderStudentsTab();
+}
+
+/**
+ * グループを削除
+ * @param {string} groupId
+ */
+function deleteGroup(groupId) {
+  state.groups = state.groups.filter(g => g.id !== groupId);
+  delete state.picked[groupId];
+  delete state.excluded[groupId];
+  saveGroups();
+  savePicked();
+  saveExcluded();
+  if (state.activeGroupId === groupId) {
+    state.activeGroupId = null;
+    state.lastPicked = null;
+    renderNominateCard(null);
+    renderProgress();
+    renderHistory();
+    updateNominateButton();
+  }
+  renderGroupList();
+  showToast('グループを削除しました');
+}
+
+/**
+ * 学生を除外
+ */
+function excludeStudent(groupId, studentId) {
+  if (!state.excluded[groupId]) state.excluded[groupId] = [];
+  if (!state.excluded[groupId].includes(studentId)) {
+    state.excluded[groupId].push(studentId);
+    saveExcluded();
+  }
+}
+
+/**
+ * 学生の除外を解除
+ */
+function includeStudent(groupId, studentId) {
+  if (!state.excluded[groupId]) return;
+  state.excluded[groupId] = state.excluded[groupId].filter(id => id !== studentId);
+  saveExcluded();
+}
+
+// ========== モーダル ==========
+
+/**
+ * グループ作成モーダルを開く
+ */
+async function openCreateGroupModal() {
+  const overlay = document.getElementById('modal-create-group');
+  const nameInput = document.getElementById('input-group-name');
+  const checkList = document.getElementById('class-checkbox-list');
+
+  nameInput.value = '';
+  checkList.innerHTML = '<p style="color:var(--text-light);font-size:13px;">読み込み中...</p>';
+  overlay.classList.add('open');
+  nameInput.focus();
+
+  // クラスグループが未取得なら取得
+  if (state.classGroups.length === 0) {
+    await fetchClassGroups();
+  }
+
+  checkList.innerHTML = '';
+  if (state.classGroups.length === 0) {
+    checkList.innerHTML = '<p style="color:var(--text-light);font-size:13px;">クラスグループが見つかりません</p>';
+    return;
+  }
+
+  state.classGroups.forEach(cg => {
+    const label = document.createElement('label');
+    label.className = 'class-checkbox-item';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = cg;
+
+    const span = document.createElement('span');
+    span.className = 'class-checkbox-label';
+    span.textContent = cg;
+
+    cb.addEventListener('change', () => {
+      label.classList.toggle('selected', cb.checked);
+    });
+
+    label.appendChild(cb);
+    label.appendChild(span);
+    checkList.appendChild(label);
+  });
+}
+
+/**
+ * グループ作成モーダルを閉じる
+ */
+function closeCreateGroupModal() {
+  document.getElementById('modal-create-group').classList.remove('open');
+}
+
+/**
+ * グループを保存
+ */
+function saveNewGroup() {
+  const name = document.getElementById('input-group-name').value.trim();
+  if (!name) {
+    showToast('グループ名を入力してください', 'warning');
+    return;
+  }
+
+  const checked = [...document.querySelectorAll('#class-checkbox-list input[type=checkbox]:checked')];
+  if (checked.length === 0) {
+    showToast('クラスを1つ以上選択してください', 'warning');
+    return;
+  }
+
+  const newGroup = {
+    id:          String(Date.now()),
+    name:        name,
+    classGroups: checked.map(cb => cb.value),
+  };
+
+  state.groups.push(newGroup);
+  saveGroups();
+  closeCreateGroupModal();
+  renderGroupList();
+  selectGroup(newGroup.id);
+  showToast(`グループ「${name}」を作成しました`, 'success');
+}
+
+// ========== イベント設定 ==========
+
+// 表示モードトグル
+document.querySelectorAll('.toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.displayMode = btn.dataset.mode;
+    state.settings.displayMode = state.displayMode;
+    saveSettings();
+    updateCardDisplayMode();
+    renderHistory();
+  });
+});
+
+// 初期トグル状態を設定
+document.querySelectorAll('.toggle-btn').forEach(btn => {
+  btn.classList.toggle('active', btn.dataset.mode === state.displayMode);
+});
+
+// タブ切替
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'students') renderStudentsTab();
+    if (btn.dataset.tab === 'settings') renderSettingsStats();
+  });
+});
+
+// 指名ボタン
+document.getElementById('btn-nominate').addEventListener('click', async () => {
+  await doNominate();
+});
+
+// リセットボタン
+document.getElementById('btn-reset').addEventListener('click', async () => {
+  const groupId = state.activeGroupId;
+  if (!groupId) return;
+  const group = state.groups.find(g => g.id === groupId);
+  const name = group ? group.name : 'このグループ';
+  if (!confirm(`「${name}」の指名状態をリセットしますか？`)) return;
+  state.picked[groupId] = [];
+  savePicked();
+  state.lastPicked = null;
+  renderNominateCard(null);
+  renderProgress();
+  renderHistory();
+  renderGroupList();
+  showToast('リセットしました');
+});
+
+// グループ作成ボタン
+document.getElementById('btn-create-group').addEventListener('click', openCreateGroupModal);
+
+// モーダル: キャンセル
+document.getElementById('btn-modal-cancel').addEventListener('click', closeCreateGroupModal);
+
+// モーダル: 保存
+document.getElementById('btn-modal-save').addEventListener('click', saveNewGroup);
+
+// モーダル: オーバーレイクリックで閉じる
+document.getElementById('modal-create-group').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeCreateGroupModal();
+});
+
+// ESCキーでモーダルを閉じる
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeCreateGroupModal();
+});
+
+// グループ名入力で Enter → 保存
+document.getElementById('input-group-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') saveNewGroup();
+});
+
+// 設定保存
+document.getElementById('btn-save-settings').addEventListener('click', () => {
+  const apiBase = document.getElementById('input-api-base').value.trim();
+  const mode = document.querySelector('input[name="display-mode"]:checked')?.value || 'name';
+  state.settings.apiBase = apiBase;
+  state.settings.displayMode = mode;
+  saveSettings();
+  // 表示モードも同期
+  state.displayMode = mode;
+  document.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+  showToast('設定を保存しました', 'success');
+});
+
+// 学生データ再読み込み
+document.getElementById('btn-reload-data').addEventListener('click', async () => {
+  state.classGroups = [];
+  state.studentCache = {};
+  await fetchClassGroups();
+  renderSettingsStats();
+  showToast('学生データを再読み込みしました', 'success');
+});
+
+// ========== 初期化 ==========
+
+(async () => {
+  // 設定値をUIに反映
+  document.getElementById('input-api-base').value = state.settings.apiBase;
+  const savedMode = state.settings.displayMode || 'name';
+  const modeRadio = document.querySelector(`input[name="display-mode"][value="${savedMode}"]`);
+  if (modeRadio) modeRadio.checked = true;
+
+  // サイドバー描画
+  renderGroupList();
+  renderNominateCard(null);
+  renderProgress();
+  renderHistory();
+  updateNominateButton();
+
+  // クラスグループをバックグラウンドで事前取得
+  await fetchClassGroups();
+})();
+</script>
+</body>
+</html>
