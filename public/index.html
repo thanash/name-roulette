@@ -64,7 +64,6 @@
       color: var(--primary);
       letter-spacing: .02em;
     }
-    /* 氏名 / 学籍番号 トグル */
     #display-toggle {
       display: flex;
       align-items: center;
@@ -196,7 +195,6 @@
       overflow: hidden;
     }
 
-    /* タブバー */
     #tab-bar {
       display: flex;
       background: var(--surface);
@@ -219,7 +217,6 @@
       border-bottom-color: var(--primary);
     }
 
-    /* タブパネル */
     .tab-panel { display: none; flex: 1; overflow: hidden; }
     .tab-panel.active { display: flex; }
 
@@ -230,7 +227,6 @@
       overflow: hidden;
     }
 
-    /* 左カラム */
     #nominate-left {
       flex: 1;
       display: flex;
@@ -239,14 +235,20 @@
       min-width: 0;
     }
 
-    /* 指名カード */
     #nominate-card {
       background: var(--surface);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-md);
       padding: 40px 32px;
       text-align: center;
-      flex-shrink: 0;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+    #card-inner {
+      width: 100%;
     }
     #nominate-card .class-badge {
       display: inline-block;
@@ -277,14 +279,12 @@
       padding: 20px 0;
     }
 
-    /* アニメーション */
     @keyframes fadeSlideUp {
       from { opacity: 0; transform: translateY(16px); }
       to   { opacity: 1; transform: translateY(0); }
     }
     .animate-in { animation: fadeSlideUp .35s ease forwards; }
 
-    /* プログレスバー */
     #progress-wrap {
       background: var(--surface);
       border-radius: var(--radius-md);
@@ -313,7 +313,6 @@
       background: var(--primary);
     }
 
-    /* ボタン */
     #btn-area {
       display: flex;
       gap: 12px;
@@ -351,7 +350,6 @@
     }
     #btn-reset:hover { background: var(--danger-light); }
 
-    /* 右カラム: 履歴パネル */
     #history-panel {
       width: 260px;
       flex-shrink: 0;
@@ -641,10 +639,10 @@
     .toast.error   { background: var(--danger); }
     .toast.warning { background: var(--warning); }
 
-    /* ========== スクロールバー ========== */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
     /* ========== ログインオーバーレイ ========== */
     #login-overlay {
       position: fixed;
@@ -729,9 +727,7 @@
       gap: 12px;
       font-size: 13px;
     }
-    #header-username {
-      color: var(--text-muted);
-    }
+    #header-username { color: var(--text-muted); }
     #btn-logout {
       padding: 5px 14px;
       border: 1px solid var(--border);
@@ -747,7 +743,6 @@
 </head>
 <body>
 
-<!-- ========== ヘッダー ========== -->
 <header id="header">
   <h1>ランダム指名</h1>
   <div style="display:flex;align-items:center;gap:16px;">
@@ -762,9 +757,7 @@
   </div>
 </header>
 
-<!-- ========== メインレイアウト ========== -->
 <div id="layout">
-  <!-- サイドバー -->
   <aside id="sidebar">
     <div id="sidebar-header">グループ</div>
     <div id="group-list">
@@ -773,31 +766,24 @@
     <button id="btn-create-group">＋ グループを作成</button>
   </aside>
 
-  <!-- コンテンツ -->
   <div id="content">
-    <!-- タブバー -->
     <div id="tab-bar">
       <button class="tab-btn active" data-tab="nominate">指名</button>
       <button class="tab-btn" data-tab="students">学生管理</button>
       <button class="tab-btn" data-tab="settings">設定</button>
     </div>
 
-    <!-- 指名タブ -->
     <div id="tab-nominate" class="tab-panel active">
-      <!-- 左カラム -->
       <div id="nominate-left">
-        <!-- ボタン -->
         <div id="btn-area">
           <button id="btn-nominate" disabled>指名する</button>
           <button id="btn-reset">リセット</button>
         </div>
-        <!-- 指名カード -->
         <div id="nominate-card">
           <div id="card-inner">
             <p class="empty-state">グループを選択してください</p>
           </div>
         </div>
-        <!-- プログレス -->
         <div id="progress-wrap">
           <div id="progress-label">
             <span id="progress-text">—</span>
@@ -808,7 +794,6 @@
           </div>
         </div>
       </div>
-      <!-- 右カラム: 履歴 -->
       <div id="history-panel">
         <div id="history-panel-header">指名履歴</div>
         <div id="history-list">
@@ -817,7 +802,6 @@
       </div>
     </div>
 
-    <!-- 学生管理タブ -->
     <div id="tab-students" class="tab-panel">
       <p class="panel-title">学生管理</p>
       <div id="students-content">
@@ -827,7 +811,6 @@
       </div>
     </div>
 
-    <!-- 設定タブ -->
     <div id="tab-settings" class="tab-panel">
       <div class="settings-section">
         <h3>API設定</h3>
@@ -868,7 +851,6 @@
   </div>
 </div>
 
-<!-- ========== グループ作成モーダル ========== -->
 <div class="modal-overlay" id="modal-create-group">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <p class="modal-title" id="modal-title">グループを作成</p>
@@ -889,7 +871,6 @@
   </div>
 </div>
 
-<!-- ========== トースト ========== -->
 <div id="toast-container"></div>
 
 <!-- ========== ログインオーバーレイ ========== -->
@@ -970,7 +951,6 @@ async function doLogin() {
     if (res.ok && data.ok) {
       document.getElementById('login-password').value = '';
       hideLoginOverlay(data.displayName);
-      // 認証後にデータを初期読み込み
       await fetchClassGroups();
       renderSettingsStats();
     } else {
@@ -995,24 +975,12 @@ async function doLogout() {
   document.getElementById('login-password').value = '';
 }
 
-// ========== ユーティリティ ==========
-
-/**
- * XSS 対策: 文字列をHTMLエスケープ
- * @param {string} str
- * @returns {string}
- */
 function escapeHtml(str) {
   const el = document.createElement('div');
   el.textContent = String(str ?? '');
   return el.innerHTML;
 }
 
-/**
- * トースト通知を表示（右下、3秒で消える）
- * @param {string} msg
- * @param {'success'|'error'|'warning'|''} type
- */
 function showToast(msg, type = '') {
   const container = document.getElementById('toast-container');
   const el = document.createElement('div');
@@ -1022,16 +990,10 @@ function showToast(msg, type = '') {
   setTimeout(() => el.remove(), 3000);
 }
 
-/**
- * 現在時刻を HH:MM 形式で返す
- * @returns {string}
- */
 function nowHHMM() {
   const d = new Date();
   return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 }
-
-// ========== localStorage ヘルパー ==========
 
 const LS_KEYS = {
   groups:   'sg_groups',
@@ -1051,35 +1013,20 @@ function lsSet(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
 }
 
-// ========== アプリ状態 ==========
-
 const state = {
-  /** @type {Array<{id:string, name:string, classGroups:string[]}>} */
-  groups: lsGet(LS_KEYS.groups, []),
-  /** @type {{[groupId:string]: string[]}} */
-  picked: lsGet(LS_KEYS.picked, {}),
-  /** @type {{[groupId:string]: string[]}} */
-  excluded: lsGet(LS_KEYS.excluded, {}),
-  /** @type {Array<{id:string,name:string,number:string,group:string,time:string}>} */
-  history: lsGet(LS_KEYS.history, []),
-  /** @type {{apiBase:string, displayMode:'name'|'number'}} */
-  settings: lsGet(LS_KEYS.settings, { apiBase: '/name-roulette/api', displayMode: 'name' }),
-  /** 選択中グループID @type {string|null} */
+  groups:      lsGet(LS_KEYS.groups,   []),
+  picked:      lsGet(LS_KEYS.picked,   {}),
+  excluded:    lsGet(LS_KEYS.excluded, {}),
+  history:     lsGet(LS_KEYS.history,  []),
+  settings:    lsGet(LS_KEYS.settings, { apiBase: '/name-roulette/api', displayMode: 'name' }),
   activeGroupId: null,
-  /** APIから取得したクラスグループ一覧 @type {string[]} */
-  classGroups: [],
-  /** class_group -> 学生[] のキャッシュ @type {{[cg:string]: Array}} */
-  studentCache: {},
-  /** 現在の表示モード @type {'name'|'number'} */
-  displayMode: 'name',
-  /** 最後に指名した学生 @type {object|null} */
-  lastPicked: null,
+  classGroups:   [],
+  studentCache:  {},
+  displayMode:   'name',
+  lastPicked:    null,
 };
 
-// 設定から表示モードを初期化
 state.displayMode = state.settings.displayMode || 'name';
-
-// ========== 永続化 ==========
 
 function saveGroups()   { lsSet(LS_KEYS.groups,   state.groups); }
 function savePicked()   { lsSet(LS_KEYS.picked,   state.picked); }
@@ -1087,11 +1034,6 @@ function saveExcluded() { lsSet(LS_KEYS.excluded, state.excluded); }
 function saveHistory()  { lsSet(LS_KEYS.history,  state.history); }
 function saveSettings() { lsSet(LS_KEYS.settings, state.settings); }
 
-// ========== API ==========
-
-/**
- * クラスグループ一覧を API から取得
- */
 async function fetchClassGroups() {
   try {
     const res = await fetch(state.settings.apiBase + '/class-groups');
@@ -1104,15 +1046,8 @@ async function fetchClassGroups() {
   }
 }
 
-/**
- * 指定 class_group の学生を API から取得（キャッシュあり）
- * @param {string} classGroup
- * @returns {Promise<Array>}
- */
 async function fetchStudents(classGroup) {
-  if (state.studentCache[classGroup]) {
-    return state.studentCache[classGroup];
-  }
+  if (state.studentCache[classGroup]) return state.studentCache[classGroup];
   try {
     const url = state.settings.apiBase + '/students?class_group=' + encodeURIComponent(classGroup);
     const res = await fetch(url);
@@ -1128,25 +1063,15 @@ async function fetchStudents(classGroup) {
   }
 }
 
-/**
- * アクティブグループの全学生を取得（複数クラス結合）
- * @returns {Promise<Array>}
- */
 async function getActiveGroupStudents() {
   const group = state.groups.find(g => g.id === state.activeGroupId);
   if (!group) return [];
   const lists = await Promise.all(group.classGroups.map(cg => fetchStudents(cg)));
-  // 重複排除 (id 基準)
   const map = new Map();
   lists.flat().forEach(s => map.set(s.id, s));
   return [...map.values()].sort((a, b) => (a.student_number || '').localeCompare(b.student_number || ''));
 }
 
-// ========== ランダム指名ロジック ==========
-
-/**
- * 指名を実行する
- */
 async function doNominate() {
   const groupId = state.activeGroupId;
   if (!groupId) return;
@@ -1155,10 +1080,8 @@ async function doNominate() {
   const picked   = state.picked[groupId]   || [];
   const excluded = state.excluded[groupId] || [];
 
-  // 候補: 除外・指名済み以外
   let candidates = students.filter(s => !picked.includes(s.id) && !excluded.includes(s.id));
 
-  // 全員消化 → 自動リセット
   if (candidates.length === 0) {
     state.picked[groupId] = [];
     savePicked();
@@ -1170,24 +1093,20 @@ async function doNominate() {
     }
   }
 
-  // ランダム選択
   const chosen = candidates[Math.floor(Math.random() * candidates.length)];
 
-  // 指名済みに追加
   if (!state.picked[groupId]) state.picked[groupId] = [];
   state.picked[groupId].push(chosen.id);
   savePicked();
 
-  // 履歴に追加 (最大50件)
   const group = state.groups.find(g => g.id === groupId);
-  const histItem = {
+  state.history.unshift({
     id:     chosen.id,
     name:   chosen.name,
     number: chosen.student_number,
     group:  group ? group.name : '',
     time:   nowHHMM(),
-  };
-  state.history.unshift(histItem);
+  });
   if (state.history.length > 50) state.history.pop();
   saveHistory();
 
@@ -1198,16 +1117,9 @@ async function doNominate() {
   renderGroupList();
 }
 
-// ========== 描画 ==========
-
-/**
- * 指名カードを描画
- * @param {object|null} student
- */
 function renderNominateCard(student) {
   const inner = document.getElementById('card-inner');
   if (!student) {
-    // DOM操作は textContent で安全に
     inner.innerHTML = '';
     const p = document.createElement('p');
     p.className = 'empty-state';
@@ -1217,8 +1129,6 @@ function renderNominateCard(student) {
   }
 
   const group = state.groups.find(g => g.id === state.activeGroupId);
-
-  // アニメーション用に一旦クリア
   inner.innerHTML = '';
 
   const wrap = document.createElement('div');
@@ -1244,9 +1154,6 @@ function renderNominateCard(student) {
   inner.appendChild(wrap);
 }
 
-/**
- * 表示モードを切り替えた際にカードを再描画
- */
 function updateCardDisplayMode() {
   if (state.lastPicked) {
     const mainEl = document.getElementById('nominate-main-text');
@@ -1258,9 +1165,6 @@ function updateCardDisplayMode() {
   }
 }
 
-/**
- * プログレスバーを描画
- */
 async function renderProgress() {
   const groupId = state.activeGroupId;
   const labelEl = document.getElementById('progress-text');
@@ -1284,38 +1188,22 @@ async function renderProgress() {
   pctEl.textContent   = `${pct}%`;
   fill.style.width    = pct + '%';
 
-  // 進捗率で色変化: 青→黄→緑
-  if (pct >= 100) {
-    fill.style.background = 'var(--success)';
-  } else if (pct >= 50) {
-    fill.style.background = 'var(--warning)';
-  } else {
-    fill.style.background = 'var(--primary)';
-  }
+  if (pct >= 100)     fill.style.background = 'var(--success)';
+  else if (pct >= 50) fill.style.background = 'var(--warning)';
+  else                fill.style.background = 'var(--primary)';
 }
 
-/**
- * 指名ボタンの有効/無効を更新
- */
 function updateNominateButton() {
-  const btn = document.getElementById('btn-nominate');
-  btn.disabled = !state.activeGroupId;
+  document.getElementById('btn-nominate').disabled = !state.activeGroupId;
 }
 
-/**
- * グループ一覧をサイドバーに描画
- */
 function renderGroupList() {
-  const list = document.getElementById('group-list');
+  const list  = document.getElementById('group-list');
   const noMsg = document.getElementById('no-group-msg');
 
-  // 既存のグループアイテムを削除（no-group-msg は残す）
   [...list.querySelectorAll('.group-item')].forEach(el => el.remove());
 
-  if (state.groups.length === 0) {
-    noMsg.style.display = '';
-    return;
-  }
+  if (state.groups.length === 0) { noMsg.style.display = ''; return; }
   noMsg.style.display = 'none';
 
   state.groups.forEach(group => {
@@ -1327,39 +1215,31 @@ function renderGroupList() {
     nameEl.className = 'group-item-name';
     nameEl.textContent = group.name;
 
-    const pickedCount = (state.picked[group.id] || []).length;
     const badge = document.createElement('span');
     badge.className = 'group-badge';
-    badge.textContent = pickedCount;
+    badge.textContent = (state.picked[group.id] || []).length;
 
     const delBtn = document.createElement('button');
     delBtn.className = 'group-delete-btn';
     delBtn.textContent = '削除';
     delBtn.addEventListener('click', e => {
       e.stopPropagation();
-      if (confirm(`グループ「${group.name}」を削除しますか？`)) {
-        deleteGroup(group.id);
-      }
+      if (confirm(`グループ「${group.name}」を削除しますか？`)) deleteGroup(group.id);
     });
 
     item.appendChild(nameEl);
     item.appendChild(badge);
     item.appendChild(delBtn);
-
     item.addEventListener('click', () => selectGroup(group.id));
     list.appendChild(item);
   });
 }
 
-/**
- * 指名履歴パネルを描画
- */
 function renderHistory() {
-  const list  = document.getElementById('history-list');
-  const empty = document.getElementById('history-empty');
+  const list    = document.getElementById('history-list');
+  const empty   = document.getElementById('history-empty');
   const groupId = state.activeGroupId;
 
-  // 現在のグループの履歴を最新20件表示
   const filtered = groupId
     ? state.history.filter(h => {
         const g = state.groups.find(g2 => g2.id === groupId);
@@ -1367,13 +1247,9 @@ function renderHistory() {
       }).slice(0, 20)
     : state.history.slice(0, 20);
 
-  // 既存アイテムを削除
   [...list.querySelectorAll('.history-item')].forEach(el => el.remove());
 
-  if (filtered.length === 0) {
-    empty.style.display = '';
-    return;
-  }
+  if (filtered.length === 0) { empty.style.display = ''; return; }
   empty.style.display = 'none';
 
   filtered.forEach(h => {
@@ -1399,9 +1275,6 @@ function renderHistory() {
   });
 }
 
-/**
- * 学生管理タブを描画
- */
 async function renderStudentsTab() {
   const container = document.getElementById('students-content');
   container.innerHTML = '';
@@ -1429,20 +1302,14 @@ async function renderStudentsTab() {
   const picked   = state.picked[groupId]   || [];
   const excluded = state.excluded[groupId] || [];
 
-  const wrap = document.createElement('div');
+  const wrap  = document.createElement('div');
   wrap.className = 'student-table-wrap';
-
-  // テーブル生成（innerHTML は escapeHtml 済みデータのみ使用）
   const table = document.createElement('table');
   table.className = 'student-table';
 
   const thead = document.createElement('thead');
   thead.innerHTML = `<tr>
-    <th>学籍番号</th>
-    <th>氏名</th>
-    <th>クラス</th>
-    <th>状態</th>
-    <th>操作</th>
+    <th>学籍番号</th><th>氏名</th><th>クラス</th><th>状態</th><th>操作</th>
   </tr>`;
   table.appendChild(thead);
 
@@ -1450,27 +1317,16 @@ async function renderStudentsTab() {
   students.forEach(s => {
     const isPicked   = picked.includes(s.id);
     const isExcluded = excluded.includes(s.id);
-
     const tr = document.createElement('tr');
 
-    // 各セルは textContent で安全挿入
-    const tdNum = document.createElement('td');
-    tdNum.textContent = s.student_number;
-
-    const tdName = document.createElement('td');
-    tdName.textContent = s.name;
-
-    const tdClass = document.createElement('td');
-    tdClass.textContent = s.class_group;
+    const tdNum   = document.createElement('td'); tdNum.textContent   = s.student_number;
+    const tdName  = document.createElement('td'); tdName.textContent  = s.name;
+    const tdClass = document.createElement('td'); tdClass.textContent = s.class_group;
 
     const tdStatus = document.createElement('td');
-    if (isExcluded) {
-      tdStatus.innerHTML = `<span class="badge badge-excluded">除外中</span>`;
-    } else if (isPicked) {
-      tdStatus.innerHTML = `<span class="badge badge-picked">指名済み</span>`;
-    } else {
-      tdStatus.innerHTML = `<span class="badge badge-active">対象</span>`;
-    }
+    if (isExcluded)      tdStatus.innerHTML = '<span class="badge badge-excluded">除外中</span>';
+    else if (isPicked)   tdStatus.innerHTML = '<span class="badge badge-picked">指名済み</span>';
+    else                 tdStatus.innerHTML = '<span class="badge badge-active">対象</span>';
 
     const tdAction = document.createElement('td');
     const actionBtn = document.createElement('button');
@@ -1485,11 +1341,8 @@ async function renderStudentsTab() {
     }
     tdAction.appendChild(actionBtn);
 
-    tr.appendChild(tdNum);
-    tr.appendChild(tdName);
-    tr.appendChild(tdClass);
-    tr.appendChild(tdStatus);
-    tr.appendChild(tdAction);
+    tr.appendChild(tdNum); tr.appendChild(tdName); tr.appendChild(tdClass);
+    tr.appendChild(tdStatus); tr.appendChild(tdAction);
     tbody.appendChild(tr);
   });
 
@@ -1498,20 +1351,11 @@ async function renderStudentsTab() {
   container.appendChild(wrap);
 }
 
-/**
- * 設定タブの統計情報を更新
- */
 function renderSettingsStats() {
   document.getElementById('stat-groups').textContent   = state.groups.length;
   document.getElementById('stat-students').textContent = Object.values(state.studentCache).flat().length;
 }
 
-// ========== グループ操作 ==========
-
-/**
- * グループを選択
- * @param {string} groupId
- */
 function selectGroup(groupId) {
   state.activeGroupId = groupId;
   state.lastPicked = null;
@@ -1523,17 +1367,11 @@ function selectGroup(groupId) {
   renderStudentsTab();
 }
 
-/**
- * グループを削除
- * @param {string} groupId
- */
 function deleteGroup(groupId) {
   state.groups = state.groups.filter(g => g.id !== groupId);
   delete state.picked[groupId];
   delete state.excluded[groupId];
-  saveGroups();
-  savePicked();
-  saveExcluded();
+  saveGroups(); savePicked(); saveExcluded();
   if (state.activeGroupId === groupId) {
     state.activeGroupId = null;
     state.lastPicked = null;
@@ -1546,9 +1384,6 @@ function deleteGroup(groupId) {
   showToast('グループを削除しました');
 }
 
-/**
- * 学生を除外
- */
 function excludeStudent(groupId, studentId) {
   if (!state.excluded[groupId]) state.excluded[groupId] = [];
   if (!state.excluded[groupId].includes(studentId)) {
@@ -1557,22 +1392,14 @@ function excludeStudent(groupId, studentId) {
   }
 }
 
-/**
- * 学生の除外を解除
- */
 function includeStudent(groupId, studentId) {
   if (!state.excluded[groupId]) return;
   state.excluded[groupId] = state.excluded[groupId].filter(id => id !== studentId);
   saveExcluded();
 }
 
-// ========== モーダル ==========
-
-/**
- * グループ作成モーダルを開く
- */
 async function openCreateGroupModal() {
-  const overlay = document.getElementById('modal-create-group');
+  const overlay   = document.getElementById('modal-create-group');
   const nameInput = document.getElementById('input-group-name');
   const checkList = document.getElementById('class-checkbox-list');
 
@@ -1581,10 +1408,7 @@ async function openCreateGroupModal() {
   overlay.classList.add('open');
   nameInput.focus();
 
-  // クラスグループが未取得なら取得
-  if (state.classGroups.length === 0) {
-    await fetchClassGroups();
-  }
+  if (state.classGroups.length === 0) await fetchClassGroups();
 
   checkList.innerHTML = '';
   if (state.classGroups.length === 0) {
@@ -1595,54 +1419,28 @@ async function openCreateGroupModal() {
   state.classGroups.forEach(cg => {
     const label = document.createElement('label');
     label.className = 'class-checkbox-item';
-
     const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.value = cg;
-
+    cb.type = 'checkbox'; cb.value = cg;
     const span = document.createElement('span');
     span.className = 'class-checkbox-label';
     span.textContent = cg;
-
-    cb.addEventListener('change', () => {
-      label.classList.toggle('selected', cb.checked);
-    });
-
-    label.appendChild(cb);
-    label.appendChild(span);
+    cb.addEventListener('change', () => label.classList.toggle('selected', cb.checked));
+    label.appendChild(cb); label.appendChild(span);
     checkList.appendChild(label);
   });
 }
 
-/**
- * グループ作成モーダルを閉じる
- */
 function closeCreateGroupModal() {
   document.getElementById('modal-create-group').classList.remove('open');
 }
 
-/**
- * グループを保存
- */
 function saveNewGroup() {
   const name = document.getElementById('input-group-name').value.trim();
-  if (!name) {
-    showToast('グループ名を入力してください', 'warning');
-    return;
-  }
-
+  if (!name) { showToast('グループ名を入力してください', 'warning'); return; }
   const checked = [...document.querySelectorAll('#class-checkbox-list input[type=checkbox]:checked')];
-  if (checked.length === 0) {
-    showToast('クラスを1つ以上選択してください', 'warning');
-    return;
-  }
+  if (checked.length === 0) { showToast('クラスを1つ以上選択してください', 'warning'); return; }
 
-  const newGroup = {
-    id:          String(Date.now()),
-    name:        name,
-    classGroups: checked.map(cb => cb.value),
-  };
-
+  const newGroup = { id: String(Date.now()), name, classGroups: checked.map(cb => cb.value) };
   state.groups.push(newGroup);
   saveGroups();
   closeCreateGroupModal();
@@ -1651,9 +1449,6 @@ function saveNewGroup() {
   showToast(`グループ「${name}」を作成しました`, 'success');
 }
 
-// ========== イベント設定 ==========
-
-// 表示モードトグル
 document.querySelectorAll('.toggle-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
@@ -1666,12 +1461,10 @@ document.querySelectorAll('.toggle-btn').forEach(btn => {
   });
 });
 
-// 初期トグル状態を設定
 document.querySelectorAll('.toggle-btn').forEach(btn => {
   btn.classList.toggle('active', btn.dataset.mode === state.displayMode);
 });
 
-// タブ切替
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1683,12 +1476,8 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-// 指名ボタン
-document.getElementById('btn-nominate').addEventListener('click', async () => {
-  await doNominate();
-});
+document.getElementById('btn-nominate').addEventListener('click', async () => { await doNominate(); });
 
-// リセットボタン
 document.getElementById('btn-reset').addEventListener('click', async () => {
   const groupId = state.activeGroupId;
   if (!groupId) return;
@@ -1705,38 +1494,21 @@ document.getElementById('btn-reset').addEventListener('click', async () => {
   showToast('リセットしました');
 });
 
-// グループ作成ボタン
 document.getElementById('btn-create-group').addEventListener('click', openCreateGroupModal);
-
-// モーダル: キャンセル
 document.getElementById('btn-modal-cancel').addEventListener('click', closeCreateGroupModal);
-
-// モーダル: 保存
 document.getElementById('btn-modal-save').addEventListener('click', saveNewGroup);
-
-// モーダル: オーバーレイクリックで閉じる
 document.getElementById('modal-create-group').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeCreateGroupModal();
 });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCreateGroupModal(); });
+document.getElementById('input-group-name').addEventListener('keydown', e => { if (e.key === 'Enter') saveNewGroup(); });
 
-// ESCキーでモーダルを閉じる
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeCreateGroupModal();
-});
-
-// グループ名入力で Enter → 保存
-document.getElementById('input-group-name').addEventListener('keydown', e => {
-  if (e.key === 'Enter') saveNewGroup();
-});
-
-// 設定保存
 document.getElementById('btn-save-settings').addEventListener('click', () => {
   const apiBase = document.getElementById('input-api-base').value.trim();
   const mode = document.querySelector('input[name="display-mode"]:checked')?.value || 'name';
   state.settings.apiBase = apiBase;
   state.settings.displayMode = mode;
   saveSettings();
-  // 表示モードも同期
   state.displayMode = mode;
   document.querySelectorAll('.toggle-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.mode === mode);
@@ -1744,7 +1516,6 @@ document.getElementById('btn-save-settings').addEventListener('click', () => {
   showToast('設定を保存しました', 'success');
 });
 
-// 学生データ再読み込み
 document.getElementById('btn-reload-data').addEventListener('click', async () => {
   state.classGroups = [];
   state.studentCache = {};
@@ -1753,9 +1524,6 @@ document.getElementById('btn-reload-data').addEventListener('click', async () =>
   showToast('学生データを再読み込みしました', 'success');
 });
 
-// ========== 初期化 ==========
-
-// ログインボタン・フォームのイベント
 document.getElementById('btn-login').addEventListener('click', doLogin);
 document.getElementById('login-password').addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
@@ -1763,20 +1531,17 @@ document.getElementById('login-password').addEventListener('keydown', e => {
 document.getElementById('btn-logout').addEventListener('click', doLogout);
 
 (async () => {
-  // 設定値をUIに反映
   document.getElementById('input-api-base').value = state.settings.apiBase;
   const savedMode = state.settings.displayMode || 'name';
   const modeRadio = document.querySelector(`input[name="display-mode"][value="${savedMode}"]`);
   if (modeRadio) modeRadio.checked = true;
 
-  // サイドバー描画
   renderGroupList();
   renderNominateCard(null);
   renderProgress();
   renderHistory();
   updateNominateButton();
 
-  // 認証チェック → ログイン済みならデータ取得
   const loggedIn = await checkAuthStatus();
   if (loggedIn) {
     await fetchClassGroups();
