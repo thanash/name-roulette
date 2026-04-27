@@ -8,15 +8,13 @@ const helmet  = require('helmet');
 const session = require('express-session');
 const path    = require('path');
 const { Pool } = require('pg');
-const { Client: LdapClient } = require('ldapts');
+const { spawn, execFile } = require('child_process');
 
 const app       = express();
 const PORT      = process.env.PORT      || 3001;
 const BASE_PATH = '/name-roulette';
 
-const AD_LDAP_URL       = process.env.AD_LDAP_URL       || 'ldap://172.16.0.1';
-const AD_DOMAIN         = process.env.AD_DOMAIN         || 'yse.ac.jp';
-const AD_BASE_DN        = process.env.AD_BASE_DN        || 'DC=yse,DC=ac,DC=jp';
+const AD_REALM          = process.env.AD_REALM          || 'YSE.AC.JP';
 const AD_REQUIRED_GROUP = process.env.AD_REQUIRED_GROUP || '教職員';
 
 // ========== ミドルウェア ==========
@@ -55,64 +53,60 @@ pool.connect((err, client, release) => {
   }
 });
 
-// ========== LDAP 認証 ==========
+// ========== Kerberos 認証 ==========
 
 /**
- * ユーザー名・パスワードで AD に対して認証し、教職員グループ所属を確認する。
- * @param {string} username - ドメインなしのユーザー名
+ * kinit でパスワード検証 → getent でグループ確認。
+ * @param {string} username
  * @param {string} password
  * @returns {Promise<{displayName: string}>}
- * @throws ログイン失敗時にエラーをスロー
  */
-async function authenticateAD(username, password) {
-  // ユーザー名に使用できない文字を拒否（LDAPインジェクション対策）
+function authenticateAD(username, password) {
+  // シェルインジェクション対策: 英数字・ハイフン・アンダースコア・ドットのみ許可
   if (!/^[\w\-.]+$/.test(username)) {
-    throw new Error('無効なユーザー名です');
+    return Promise.reject(new Error('無効なユーザー名です'));
   }
 
-  const client = new LdapClient({
-    url:            AD_LDAP_URL,
-    connectTimeout: 5000,
-    tlsOptions:     { rejectUnauthorized: false },
+  return new Promise((resolve, reject) => {
+    // 一時的な Kerberos 認証情報キャッシュ（並列リクエストが干渉しないよう個別ファイル）
+    const ccache = `/tmp/krb5cc_nr_${process.pid}_${Date.now()}`;
+    const env    = { ...process.env, KRB5CCNAME: `FILE:${ccache}` };
+
+    const kinit = spawn('/usr/bin/kinit', [`${username}@${AD_REALM}`], { env });
+
+    let stderr = '';
+    kinit.stderr.on('data', d => { stderr += d.toString(); });
+
+    // kinit はパスワードプロンプトを stderr に出し、stdin から読む
+    kinit.stdin.write(password + '\n');
+    kinit.stdin.end();
+
+    kinit.on('close', code => {
+      // 認証情報キャッシュを即時削除
+      require('fs').unlink(ccache, () => {});
+
+      if (code !== 0) {
+        return reject(new Error(`kinit 失敗 (code=${code})`));
+      }
+
+      // SSSD 経由でグループ所属を確認
+      execFile('id', ['-Gn', username], (err, stdout) => {
+        if (err) return reject(new Error('グループ確認失敗'));
+
+        const groups = stdout.trim().split(/\s+/);
+        if (!groups.includes(AD_REQUIRED_GROUP)) {
+          return reject(new Error('教職員グループに所属していません'));
+        }
+
+        resolve({ displayName: username });
+      });
+    });
+
+    kinit.on('error', err => {
+      require('fs').unlink(ccache, () => {});
+      reject(err);
+    });
   });
-
-  try {
-    // UPN 形式 (username@yse.ac.jp) でバインド → パスワード検証
-    await client.bind(`${username}@${AD_DOMAIN}`, password);
-
-    // ユーザーオブジェクトを検索して memberOf・表示名を取得
-    const { searchEntries } = await client.search(AD_BASE_DN, {
-      scope:      'sub',
-      filter:     `(sAMAccountName=${username})`,
-      attributes: ['memberOf', 'displayName', 'cn'],
-    });
-
-    if (searchEntries.length === 0) {
-      throw new Error('ユーザーが見つかりません');
-    }
-
-    const user = searchEntries[0];
-
-    // memberOf の各 DN から CN 部分を取り出して教職員グループを確認
-    const memberOf = Array.isArray(user.memberOf)
-      ? user.memberOf
-      : (user.memberOf ? [user.memberOf] : []);
-
-    const isInRequiredGroup = memberOf.some(dn => {
-      const match = dn.match(/^CN=([^,]+)/i);
-      return match && match[1] === AD_REQUIRED_GROUP;
-    });
-
-    if (!isInRequiredGroup) {
-      throw new Error('教職員グループに所属していません');
-    }
-
-    const displayName = user.displayName || user.cn || username;
-    return { displayName: String(displayName) };
-
-  } finally {
-    await client.unbind();
-  }
 }
 
 // ========== 認証ミドルウェア ==========
